@@ -65,10 +65,9 @@ sdsShell pc gpr m filep
                                              filec <- readFile filep
                                              putStr $ "Loading " ++ filep ++ " into the DLX memory..."
                                              let initM' = fillM (input2program filec) initM
-                                             let iarray = array (0,length (clear_code filec) - 1) [(div (bv2nat (fst p)) 4, snd p) | p <- input2program' filec]
                                              putStrLn "done!"
                                              putStrLn  "Execute..."
-                                             (npc,nGPR,nM) <- execShell zeros32 initGPR initM' iarray (if ui == "run" then -1 else 0)
+                                             (npc,nGPR,nM) <- execShell zeros32 initGPR initM' (if ui == "run" then -1 else 0)
                                              putStrLn "done!"
                                              sdsShell npc nGPR nM filep
                                      else 
@@ -84,42 +83,41 @@ sdsShell pc gpr m filep
 
 nat2gpr_addr_helper i = drop 27 $ nat2bv i
 
-execShell pc gpr m ia p = do 
+execShell pc gpr m p = do 
                             if all (==f) (memory_read_word m pc) then do return (pc,gpr,m)
                                 else do
                                 if p == 0 then do
-                                let addr = div (bv2nat pc) 4
-                                putStr $ "sds executing [" ++ show (addr*4) ++ ": " ++ (ia ! addr) ++ "] >"
+                                putStr $ "sds executing [" ++ show (bv2nat pc) ++ ": " ++ show (bv2instr (memory_read_word m pc)) ++ "] >"
                                 hFlush stdout
                                 ui <- getLine
                                 if isPrefixOf "skip" ui then do  let l = words ui
-                                                                 execShell pc gpr m ia (read (l!!1) :: Int)
+                                                                 execShell pc gpr m (read (l!!1) :: Int)
                                                 else do
                                 if ui == "gpr"
                                      then do showGPR gpr
-                                             execShell pc gpr m ia p
+                                             execShell pc gpr m p
                                      else do
                                 if ui == "pc"   then do putStrLn $ "pc: " ++ show (bv2int pc)
-                                                        execShell pc gpr m ia p
+                                                        execShell pc gpr m p
                                                 else do
                                 if ui == "stop"   then do putStrLn "Exit the execution mode..."
                                                           return (pc,gpr,m)
                                                   else do
                                 if isPrefixOf "mem" ui then do  let l = words ui
                                                                 putStrLn $ "M(" ++ (l!!1) ++ ") = " ++ show (bv2int (memory_read_word m (int2bv (read (l!!1) ::Int))))
-                                                                execShell pc gpr m ia p
+                                                                execShell pc gpr m p
                                                        else do
                                 if ui /= ""     then do putStrLn "You are in execution mode! Press ENTER or use the following commands: pc, gpr,\nmem <addr>, skip <n>, stop.\n"
-                                                        execShell pc gpr m ia p
+                                                        execShell pc gpr m p
                                                 else do
                                 putStrLn "-> ok"
                                 if not (all (==f) (memory_read_word m pc))
                                     then do  let (DLX npc nGPR nM) = delta (DLX pc gpr m)
-                                             execShell npc nGPR nM ia p
+                                             execShell npc nGPR nM p
                                     else do return (pc,gpr,m)
                                  else do
                                         let (DLX npc nGPR nM) = delta (DLX pc gpr m)
-                                        execShell npc nGPR nM ia (p - if p<0 then 0 else 1)
+                                        execShell npc nGPR nM (p - if p<0 then 0 else 1)
 
 
 showGPR gpr  =   do
