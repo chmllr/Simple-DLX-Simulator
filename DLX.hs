@@ -20,7 +20,7 @@ module DLX where
 type Bit = Bool
 type BitVec = [Bit]
 
-data DLX_Conf =  DLX BitVec (BitVec -> BitVec) (BitVec -> BitVec)
+data DLX_Conf =  DLX BitVec BitVec (BitVec -> BitVec) (BitVec -> BitVec) Bool
 
 -- abbreviations for convinience
 t	= True
@@ -122,9 +122,6 @@ sh_unit	a b [True,True]		=	let n = bv2int b in replicate n (a!!0) ++ take (lengt
 initGPR	= (\x -> zeros32)
 initM	= (\x -> zeros8)
 
--- initial DLX configuration
-initC = DLX zeros32 initGPR initGPR
-
 -- update functions for GPR and memory
 updateGPR gpr [False,False,False,False,False]   _   =  gpr
 updateGPR gpr addr          din = \x -> if x==addr then din else gpr x
@@ -136,9 +133,9 @@ memory_read_hword m pc  = m (inc pc) ++ m pc
 memory_read_byte m pc   = m pc
 
 -- DLX delta function
-delta (DLX pc gpr m) = 
+delta (DLX pc dpc gpr m dpc_enabled) =
 	let
-        i	    =	memory_read_word m pc
+        i	    =	memory_read_word m (if dpc_enabled then dpc else pc)
         opc	    =	slice (31,26) i
         rtype  	=	all (==f) opc
         jtype	=	slice (5,1) opc == [f,f,f,f,t]
@@ -187,6 +184,7 @@ delta (DLX pc gpr m) =
         shres   =   	sh_unit lop rop shf
 
         nextPC  =	if bjtaken then btarget else add pc (inc (inc (inc (inc zeros32)))) f
+        nextDPC =   pc
         nextGPR = 	if link then updateGPR gpr [t,t,t,t,t] (inc (inc (inc (inc pc)))) else
 		        	if alu || alui then updateGPR gpr rd alures else
         			if shift || shifti then updateGPR gpr rd shres else 
@@ -198,7 +196,7 @@ delta (DLX pc gpr m) =
 		    		(inc (inc ea)) (slice (23,16) (gpr rd)))
 			    	(inc (inc (inc ea))) (slice (31,24) (gpr rd))
 	in
-	(DLX nextPC nextGPR nextM)
+	(DLX nextPC nextDPC nextGPR nextM dpc_enabled)
 
 -- Instruction Parsing
 
@@ -295,6 +293,3 @@ fillM (x:xs)	m = let (addr,instr_raw) = x
 					     (inc (inc addr)) (slice (23,16) instr))
                                             (inc (inc (inc addr))) (slice (31,24) instr)
 		     in fillM xs n'
-
--- execution function (consecutive applying of delta function)
-execute (DLX pc gpr m) = if not (all (==f) (memory_read_word m pc)) then execute (delta (DLX pc gpr m)) else (DLX pc gpr m)
