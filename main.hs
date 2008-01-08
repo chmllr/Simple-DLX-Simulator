@@ -23,9 +23,10 @@ import IO
 import Data.List
 import Array
 
+ver	=	"v0.05"
 
 main    =   do
-                putStrLn "Welcome to Simple DLX Simulator v0.05!\n"
+                putStrLn $ "Welcome to Simple DLX Simulator " ++ ver ++ "\n"
                 sdsShell zeros32 zeros32 initGPR initM f ""
 
 sdsShell pc dpc gpr m dpc_enabled filep
@@ -37,7 +38,7 @@ sdsShell pc dpc gpr m dpc_enabled filep
                     if elem ui ["help","usage"] then do putStrLn "You can use the following commands:\n\nabout\t\tto see the information about the SDS\ndpc\t\tto toggle the delayed PC emulation (by default: off)\nexec\t\tto reload and execute the last loaded file step by step (execution mode)\nexit\t\tto exit the simulator\nhelp\t\tto see this help message\ninstr\t\tto see the list of all available instructions\nload <path>\tto load your assembler file\nrun\t\tto execute the program in one run (divergency!)\n\ngpr\t\tto see the content of gpr\nmem <addr>\tto see the content of memory at the given address\npc\t\tto show the current pc\n"
                                                         sdsShell  pc dpc gpr m dpc_enabled filep
                                     else 
-                    if ui == "about" then do putStrLn "SDS (Simple DLX Simulator) v0.01 is a simple implementation of the DLX\nspecification as given in [1]. It is only academically interesting and can be\nused to test assembler programs.\n\nAuthor: Christian Mueller\neMail: cm@cs.uni-sb.de\n\n[1] \"Computer Architecture: Complexity and Correctnes\" by Wolfgang J. Paul,\n    Silvia Mueller."
+                    if ui == "about" then do putStrLn "SDS (Simple DLX Simulator) is a simple implementation of the DLX\nspecification as given in [1]. It is only academically interesting and can be\nused to test assembler programs.\n\nAuthor: Christian Mueller\neMail: cm@cs.uni-sb.de\n\n[1] \"Computer Architecture: Complexity and Correctnes\" by Wolfgang J. Paul,\n    Silvia Mueller."
                                              sdsShell pc dpc gpr m dpc_enabled filep
                                      else 
                     if ui == "instr" then do putStrLn "Syntax for all instructions in an assembler source file:\n\naddr : instr [rs1] [rs2] [rd] [imm/sa]\n\nAvailable instructions:\n\nlb, lbu, lh, lhu, lw, sb, sh, sw, addi, subi, andi, ori, xori, lhgi, clri, sgri,\nseqi, sgei, slsi, snei, slei, seti, beqz, bnez, jr, jalr, slli, srli, srai, sll,\nsrl, sra, add, sub, and, or, xor, lhg, clr, set, sgr, seq, sge, sls, sne, sle,\nj, jal\n\nFor instruction set semantics and further information see \"Computer\nArchitecture: Complexity and Correctnes\" by Wolfgang J. Paul, Silvia Mueller."
