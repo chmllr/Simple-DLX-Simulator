@@ -23,7 +23,7 @@ import IO
 import Data.List
 import Array
 
-ver	=	"v0.05"
+ver	=	"v0.06"
 
 main    =   do
                 putStrLn $ "Welcome to Simple DLX Simulator " ++ ver ++ "\n"
@@ -58,24 +58,33 @@ sdsShell pc dpc gpr m dpc_enabled filep
                     if ui == "dpc"  then do   putStrLn $ "DPC emulation: " ++ (if dpc_enabled then "off" else "on")
                                               sdsShell (add pc (if dpc_enabled then bvneg (nat2bv 4) else nat2bv 4) dpc_enabled) dpc gpr m (not dpc_enabled) filep
                                      else 
+                    if isPrefixOf "mem" ui then 
+			do
+			let l = words ui
+			putStrLn $ "M(" ++ (l!!1) ++ ") = " ++ show (bv2int (memory_read_word m (int2bv (read (l!!1) ::Int))))
+                        sdsShell pc dpc gpr m dpc_enabled filep
+                        else
                     if elem ui ["run","exec"] 
-                                     then do if null filep then do putStrLn  "Load file first!"
-                                                                   sdsShell pc dpc gpr m dpc_enabled filep
-                                                        else do
-                                             filec <- readFile filep
-                                             putStr $ "Loading " ++ filep ++ " into the DLX memory..."
-                                             let m' = fillM (input2program filec) m
-                                             putStrLn "done!"
+                                     then do 
                                              putStrLn  "Execute..."
-                                             (npc,ndpc,nGPR,nM) <- execShell pc dpc gpr m' dpc_enabled (if ui == "run" then -1 else 0)
+                                             (npc,ndpc,nGPR,nM) <- execShell pc dpc gpr m dpc_enabled (if ui == "run" then -1 else 0)
                                              putStrLn "done!"
                                              sdsShell npc ndpc nGPR nM dpc_enabled filep
                                      else 
-                    if isPrefixOf "load" ui then do  let l = words ui
-                                                     putStrLn $ "Loading " ++ (l!!1) ++ "...\n"
-                                                     filec <- readFile (l!!1)
-                                                     putStrLn filec
-                                                     sdsShell  pc dpc gpr m dpc_enabled (l!!1)
+                    if isPrefixOf "load" ui then do  	let l = words ui
+                                                     	putStr $ "Reading " ++ (l!!1) ++ "... "
+					     		if null (l!!1) then
+								do 
+								putStrLn  "Error: file path is empty!"
+                                                        	sdsShell pc dpc gpr m dpc_enabled filep
+                                                        	else do
+								putStrLn "done!"
+			                                        filec <- readFile (l!!1)
+                                             			putStrLn $ "Loading " ++ (l!!1) ++ " into the DLX memory...\n"
+                                             			let m' = fillM (input2program filec) m
+								putStrLn filec
+                                             			putStrLn "done!"
+                                                     		sdsShell  pc dpc gpr m' dpc_enabled (l!!1)
                                      else 
                                      do putStrLn "Wrong command!"
                                         sdsShell pc dpc gpr m dpc_enabled filep

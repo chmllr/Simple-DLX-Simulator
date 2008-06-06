@@ -123,7 +123,7 @@ initGPR	= (\x -> zeros32)
 initM	= (\x -> zeros8)
 
 -- update functions for GPR and memory
-updateGPR gpr [False,False,False,False,False]   _   =  gpr
+-- updateGPR gpr [False,False,False,False,False]   _   =  gpr
 updateGPR gpr addr          din = \x -> if x==addr then din else gpr x
 updateM   m   addr          din = \x -> if x==addr then din else m x
 
