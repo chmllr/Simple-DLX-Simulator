@@ -204,25 +204,44 @@ delta (DLX pc dpc gpr m dpc_enabled) =
 --data Instruction =	I String GPReg GPReg Int | R GPReg GPReg GPReg Int String | J String Int
 data Instruction =	I String String String Int | R String String String Int String | J String Int | Illegal
 
-instance Show Instruction where
-    show (I "lhgi" s2 s3 i)   =  "lhgi " ++ s3 ++ " " ++ show i
-    show (I "jr" s2 s3 i)   =  "jr " ++ s2
-    show (I "jalr" s2 s3 i)   =  "jalr " ++ s2
-    show (I "clri" s2 s3 i)   =  "clri " ++ s3
-    show (I "seti" s2 s3 i)   =  "seti " ++ s3
-    show (I "beqz" s2 s3 i)   =  "beqz " ++ s2 ++ " " ++ show i 
-    show (I "bnez" s2 s3 i)   =  "bnez " ++ s2 ++ " " ++ show i 
-    show (I "addi" "r0" "r0" 0) = "nop"
-    show (I s1 s2 s3 i)   =  s1 ++ " " ++ s2 ++ " " ++ s3 ++ " " ++ show i
-    show (R s1 s2 s3 i "slli")   =   "slli " ++ s1 ++ " " ++ s3 ++ " "++ show i
-    show (R s1 s2 s3 i "srli")   =   "srli " ++ s1 ++ " " ++ s3 ++ " "++ show i
-    show (R s1 s2 s3 i "srai")   =   "srai " ++ s1 ++ " " ++ s3 ++ " "++ show i
-    show (R s1 s2 s3 i "lhg")   =   "lhg " ++ s2 ++ " " ++ s3
-    show (R s1 s2 s3 i "clr")   =   "clr " ++ s3
-    show (R s1 s2 s3 i "set")   =   "set " ++ s3
-    show (R s1 s2 s3 i s4)   =   s4 ++ " " ++ s1 ++ " " ++ s2 ++ " " ++ s3
-    show (J s i)   =   s ++ " " ++ show i
-    show Illegal = "Illegal"
+
+my_show True (I "lhgi" s2 s3 i)   =  "lhgi " ++ s3 ++ " " ++ show i
+my_show True (I "jr" s2 s3 i)   =  "jr " ++ s2
+my_show True (I "jalr" s2 s3 i)   =  "jalr " ++ s2
+my_show True (I "clri" s2 s3 i)   =  "clri " ++ s3
+my_show True (I "seti" s2 s3 i)   =  "seti " ++ s3
+my_show True (I "beqz" s2 s3 i)   =  "beqz " ++ s2 ++ " " ++ show i 
+my_show True (I "bnez" s2 s3 i)   =  "bnez " ++ s2 ++ " " ++ show i 
+my_show True (I "addi" "r0" "r0" 0) = "nop"
+my_show True (I s1 s2 s3 i)   =  s1 ++ " " ++ s3 ++ " " ++ s2 ++ " " ++ show i
+my_show True (R s1 s2 s3 i "slli")   =   "slli " ++ s3 ++ " " ++ s1 ++ " "++ show i
+my_show True (R s1 s2 s3 i "srli")   =   "srli " ++ s3 ++ " " ++ s1 ++ " "++ show i
+my_show True (R s1 s2 s3 i "srai")   =   "srai " ++ s3 ++ " " ++ s1 ++ " "++ show i
+my_show True (R s1 s2 s3 i "lhg")   =   "lhg " ++ s2 ++ " " ++ s3
+my_show True (R s1 s2 s3 i "clr")   =   "clr " ++ s3
+my_show True (R s1 s2 s3 i "set")   =   "set " ++ s3
+my_show True (R s1 s2 s3 i s4)   =   s4 ++ " " ++ s3 ++ " " ++ s1 ++ " " ++ s2
+my_show True (J s i)   =   s ++ " " ++ show i
+my_show True Illegal = "Illegal"
+
+my_show False (I "lhgi" s1 s3 i)   =  "lhgi " ++ s3 ++ " " ++ show i
+my_show False (I "jr" s2 s3 i)   =  "jr " ++ s2
+my_show False (I "jalr" s2 s3 i)   =  "jalr " ++ s2
+my_show False (I "clri" s2 s3 i)   =  "clri " ++ s3
+my_show False (I "seti" s2 s3 i)   =  "seti " ++ s3
+my_show False (I "beqz" s2 s3 i)   =  "beqz " ++ s2 ++ " " ++ show i 
+my_show False (I "bnez" s2 s3 i)   =  "bnez " ++ s2 ++ " " ++ show i 
+my_show False (I "addi" "r0" "r0" 0) = "nop"
+my_show False (I s1 s2 s3 i)   =  s1 ++ " " ++ s2 ++ " " ++ s3 ++ " " ++ show i
+my_show False (R s1 s2 s3 i "slli")   =   "slli " ++ s1 ++ " " ++ s3 ++ " "++ show i
+my_show False (R s1 s2 s3 i "srli")   =   "srli " ++ s1 ++ " " ++ s3 ++ " "++ show i
+my_show False (R s1 s2 s3 i "srai")   =   "srai " ++ s1 ++ " " ++ s3 ++ " "++ show i
+my_show False (R s1 s2 s3 i "lhg")   =   "lhg " ++ s2 ++ " " ++ s3
+my_show False (R s1 s2 s3 i "clr")   =   "clr " ++ s3
+my_show False (R s1 s2 s3 i "set")   =   "set " ++ s3
+my_show False (R s1 s2 s3 i s4)   =   s4 ++ " " ++ s1 ++ " " ++ s2 ++ " " ++ s3
+my_show False (J s i)   =   s ++ " " ++ show i
+my_show False Illegal = "Illegal"
 
 -- instruction name to opcode converter
 id2opc 1	"j"	    =	[f,f,f,f,t,f]

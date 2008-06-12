@@ -23,108 +23,111 @@ import IO
 import Data.List
 import Array
 
-ver	=	"v0.06"
+ver	=	"v0.07"
 
 main    =   do
                 putStrLn $ "Welcome to Simple DLX Simulator " ++ ver ++ "\n"
-                sdsShell zeros32 zeros32 initGPR initM f ""
+                sdsShell zeros32 zeros32 initGPR initM f True
 
-sdsShell pc dpc gpr m dpc_enabled filep
+sdsShell pc dpc gpr m dpc_enabled ns
             =   do
                 putStr "sds>"
                 hFlush stdout
                 ui <- getLine
                 if filter (\x -> not (elem x [' ','\t'])) ui /= [] then 
-                    if elem ui ["help","usage"] then do putStrLn "You can use the following commands:\n\nabout\t\tto see the information about the SDS\ndpc\t\tto toggle the delayed PC emulation (by default: off)\nexec\t\tto reload and execute the last loaded file step by step (execution mode)\nexit\t\tto exit the simulator\nhelp\t\tto see this help message\ninstr\t\tto see the list of all available instructions\nload <path>\tto load your assembler file\nrun\t\tto execute the program in one run (divergency!)\n\ngpr\t\tto see the content of gpr\nmem <addr>\tto see the content of memory at the given address\npc\t\tto show the current pc\n"
-                                                        sdsShell  pc dpc gpr m dpc_enabled filep
+                    if elem ui ["help","usage"] then do putStrLn "You can use the following commands:\n\nabout\t\tto see the information about the SDS\ndpc\t\tto toggle the delayed PC emulation (by default: off)\nexec\t\tto reload and execute the last loaded file step by step (execution mode)\nexit\t\tto exit the simulator\nhelp\t\tto see this help message\ninstr\t\tto see the list of all available instructions\nload <path>\tto load your assembler file\nold_syn\t\tto toggle between the old  & the new syntax (rd after/before rs1 & rs2)\nrun\t\tto execute the program in one run (divergency!)\n\ngpr\t\tto see the content of gpr\nmem <addr>\tto see the content of memory at the given address\npc\t\tto show the current pc\n"
+                                                        sdsShell  pc dpc gpr m dpc_enabled ns
                                     else 
                     if ui == "about" then do putStrLn "SDS (Simple DLX Simulator) is a simple implementation of the DLX\nspecification as given in [1]. It is only academically interesting and can be\nused to test assembler programs.\n\nAuthor: Christian Mueller\neMail: cm@cs.uni-sb.de\n\n[1] \"Computer Architecture: Complexity and Correctnes\" by Wolfgang J. Paul,\n    Silvia Mueller."
-                                             sdsShell pc dpc gpr m dpc_enabled filep
+                                             sdsShell pc dpc gpr m dpc_enabled ns
                                      else 
                     if ui == "instr" then do putStrLn "Syntax for all instructions in an assembler source file:\n\naddr : instr [rs1] [rs2] [rd] [imm/sa]\n\nAvailable instructions:\n\nlb, lbu, lh, lhu, lw, sb, sh, sw, addi, subi, andi, ori, xori, lhgi, clri, sgri,\nseqi, sgei, slsi, snei, slei, seti, beqz, bnez, jr, jalr, slli, srli, srai, sll,\nsrl, sra, add, sub, and, or, xor, lhg, clr, set, sgr, seq, sge, sls, sne, sle,\nj, jal\n\nFor instruction set semantics and further information see \"Computer\nArchitecture: Complexity and Correctnes\" by Wolfgang J. Paul, Silvia Mueller."
-                                             sdsShell pc dpc gpr m dpc_enabled filep
+                                             sdsShell pc dpc gpr m dpc_enabled ns
                                      else 
                     if ui == "exit"  then do return ()
                                      else 
+                    if ui == "old_syn"  then do putStrLn $ "Old syntax turned " ++ (if not ns then "off" else "on")
+						sdsShell pc dpc gpr m dpc_enabled (not ns)
+                                     else 
                     if ui == "reset"  then do   putStrLn "Reset...done!"
-                                                sdsShell (if dpc_enabled then nat2bv 4 else zeros32) zeros32 initGPR initM dpc_enabled filep
+                                                sdsShell (if dpc_enabled then nat2bv 4 else zeros32) zeros32 initGPR initM dpc_enabled ns
                                      else 
                     if ui == "gpr"  then do showGPR gpr
-                                            sdsShell pc dpc gpr m dpc_enabled filep
+                                            sdsShell pc dpc gpr m dpc_enabled ns
                                      else 
                     if ui == "pc"   then do putStrLn $ "pc: " ++ show (bv2int pc) ++ if dpc_enabled then "\ndpc: " ++ show (bv2int dpc) else ""
-                                            sdsShell pc dpc gpr m dpc_enabled filep
+                                            sdsShell pc dpc gpr m dpc_enabled ns
                                      else
                     if ui == "dpc"  then do   putStrLn $ "DPC emulation: " ++ (if dpc_enabled then "off" else "on")
-                                              sdsShell (add pc (if dpc_enabled then bvneg (nat2bv 4) else nat2bv 4) dpc_enabled) dpc gpr m (not dpc_enabled) filep
+                                              sdsShell (add pc (if dpc_enabled then bvneg (nat2bv 4) else nat2bv 4) dpc_enabled) dpc gpr m (not dpc_enabled) ns
                                      else 
                     if isPrefixOf "mem" ui then 
 			do
 			let l = words ui
 			putStrLn $ "M(" ++ (l!!1) ++ ") = " ++ show (bv2int (memory_read_word m (int2bv (read (l!!1) ::Int))))
-                        sdsShell pc dpc gpr m dpc_enabled filep
+                        sdsShell pc dpc gpr m dpc_enabled ns
                         else
                     if elem ui ["run","exec"] 
                                      then do 
                                              putStrLn  "Execute..."
-                                             (npc,ndpc,nGPR,nM) <- execShell pc dpc gpr m dpc_enabled (if ui == "run" then -1 else 0)
+                                             (npc,ndpc,nGPR,nM) <- execShell pc dpc gpr m dpc_enabled (if ui == "run" then -1 else 0) ns
                                              putStrLn "done!"
-                                             sdsShell npc ndpc nGPR nM dpc_enabled filep
+                                             sdsShell npc ndpc nGPR nM dpc_enabled ns
                                      else 
                     if isPrefixOf "load" ui then do  	let l = words ui
                                                      	putStr $ "Reading " ++ (l!!1) ++ "... "
 					     		if null (l!!1) then
 								do 
 								putStrLn  "Error: file path is empty!"
-                                                        	sdsShell pc dpc gpr m dpc_enabled filep
+                                                        	sdsShell pc dpc gpr m dpc_enabled ns
                                                         	else do
 								putStrLn "done!"
 			                                        filec <- readFile (l!!1)
                                              			putStrLn $ "Loading " ++ (l!!1) ++ " into the DLX memory...\n"
-                                             			let m' = fillM (input2program filec) m
+                                             			let m' = fillM (input2program ns filec) m
 								putStrLn filec
                                              			putStrLn "done!"
-                                                     		sdsShell  pc dpc gpr m' dpc_enabled (l!!1)
+                                                     		sdsShell  pc dpc gpr m' dpc_enabled ns
                                      else 
                                      do putStrLn "Wrong command!"
-                                        sdsShell pc dpc gpr m dpc_enabled filep
-                            else do sdsShell pc dpc gpr m dpc_enabled filep
+                                        sdsShell pc dpc gpr m dpc_enabled ns
+                            else do sdsShell pc dpc gpr m dpc_enabled ns
 
-execShell pc dpc gpr m dpc_enabled p = 
+execShell pc dpc gpr m dpc_enabled p ns = 
                            do
                             let cpc = if dpc_enabled then dpc else pc
                             if all (==f) (memory_read_word m cpc) then do return (pc,dpc,gpr,m)
                                 else do
                                 if p == 0 then do
-                                putStr $ "sds executing [" ++ show (bv2nat cpc) ++ ": " ++ show (bv2instr (memory_read_word m cpc)) ++ "] >"
+                                putStr $ "sds executing [" ++ show (bv2nat cpc) ++ ": " ++ my_show ns (bv2instr (memory_read_word m cpc)) ++ "] >"
                                 hFlush stdout
                                 ui <- getLine
                                 if isPrefixOf "skip" ui then do  let l = words ui
-                                                                 execShell pc dpc gpr m dpc_enabled (read (l!!1) :: Int)
+                                                                 execShell pc dpc gpr m dpc_enabled (read (l!!1) :: Int) ns
                                                 else do
                                 if ui == "gpr"
                                      then do showGPR gpr
-                                             execShell pc dpc gpr m dpc_enabled p
+                                             execShell pc dpc gpr m dpc_enabled p ns
                                      else do
                                 if ui == "pc"   then do putStrLn $ "pc: " ++ show (bv2int pc) ++ if dpc_enabled then "\ndpc: " ++ show (bv2int dpc) else ""
-                                                        execShell pc dpc gpr m dpc_enabled p
+                                                        execShell pc dpc gpr m dpc_enabled p ns
                                                 else do
                                 if ui == "stop"   then do putStrLn "Exit the execution mode..."
                                                           return (pc,dpc,gpr,m)
                                                   else do
                                 if isPrefixOf "mem" ui then do  let l = words ui
                                                                 putStrLn $ "M(" ++ (l!!1) ++ ") = " ++ show (bv2int (memory_read_word m (int2bv (read (l!!1) ::Int))))
-                                                                execShell pc dpc gpr m dpc_enabled p
+                                                                execShell pc dpc gpr m dpc_enabled p ns
                                                        else do
                                 if ui /= ""     then do putStrLn "You are in execution mode! Press ENTER or use the following commands: pc, gpr,\nmem <addr>, skip <n>, stop.\n"
-                                                        execShell pc dpc gpr m dpc_enabled p
+                                                        execShell pc dpc gpr m dpc_enabled p ns
                                                 else do
                                 putStrLn "-> ok"
                                 let (DLX npc ndpc nGPR nM _ ) = delta (DLX pc dpc gpr m dpc_enabled)
-                                execShell npc ndpc nGPR nM dpc_enabled 0
+                                execShell npc ndpc nGPR nM dpc_enabled 0 ns
                                  else do
                                         let (DLX npc ndpc nGPR nM _ ) = delta (DLX pc dpc gpr m dpc_enabled)
-                                        execShell npc ndpc nGPR nM dpc_enabled (p - if p<0 then 0 else 1)
+                                        execShell npc ndpc nGPR nM dpc_enabled (p - if p<0 then 0 else 1) ns
 
 
 nat2gpr_addr_helper i = drop 27 $ nat2bv i
