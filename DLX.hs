@@ -177,7 +177,7 @@ delta (DLX pc dpc gpr m dpc_enabled) =
         loadres'=   (if elem opc [[t,f,f,f,f,f],[t,f,f,t,f,f]] then memory_read_byte else 
                      if elem opc [[t,f,f,f,f,t],[t,f,f,t,f,t]] then memory_read_hword else memory_read_word) m ea
     	fill	=	not u && head loadres'
-    	loadres	=	replicate (32-8*(bv2int d)) fill ++ loadres'
+    	loadres	=	replicate (32-8*(bv2nat d)) fill ++ loadres'
         
 
         alures  =   	alu_unit lop rop aluf
