@@ -110,7 +110,8 @@ alu_unit a b [f_3,f_2,f_1,f_0]
 				[False,True,True]	->	bvgt a b || (not (bvgt a b) && not (bvgt b a))
 				[True,False,False]	->	bvgt b a
 				[True,False,True]	->	bvgt a b || bvgt b a
-				_                 	->	bvgt b a || (not (bvgt a b) && not (bvgt b a))]
+				[True,True,False] 	->	bvgt b a || (not (bvgt a b) && not (bvgt b a))
+				_                 	->	t]
 
 -- shifter unit implementation
 sh_unit	a b [False,False]	=	let n = bv2int b in drop n a ++ replicate n f
