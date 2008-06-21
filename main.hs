@@ -23,7 +23,7 @@ import IO
 import Data.List
 import Array
 
-ver	=	"v0.08"
+ver	=	"v0.09"
 
 main    =   do
                 putStrLn $ "Welcome to Simple DLX Simulator " ++ ver ++ "\n"
