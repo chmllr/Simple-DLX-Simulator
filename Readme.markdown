@@ -1,6 +1,6 @@
-# Supported syntax of assembler programs #
+# README #
 
-## Syntax ##
+## Supported Syntax of the Assembler Code ##
 
 On this page we'll shortly describe the syntax you have to use in your assembler programs, in order to be able to execute them on SDS. We assume, that the reader is familiar with basics of the DLX instruction set.
 Generally, every line of your assembler program should have the following form:
